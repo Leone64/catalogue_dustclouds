@@ -7,7 +7,7 @@ import FuncDef as fd
 from importlib import reload
 import itertools
 
-savefolder = "/savedplots/"
+savefolder = "savedplots/"
 
 FACTOR = 1653 #from unitless to n/cm-3
 

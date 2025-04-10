@@ -86,6 +86,23 @@ def check_inside(x, y, z, r, h, a, b, t):
     x, y, z = rotmat.T @ np.array([x, y, z])
     return z**2 + y**2 <= r**2 and abs(x) <= h/2
 
+def check_inside_arr(x, y, z, r, h, a, b, t):
+    """
+    check if the point (x, y, z) is inside the cylinder
+    """
+    if not x.shape == () and not y.shape == () and not z.shape == ():
+        x = x.flatten() - t[0]
+        y = y.flatten() - t[1]
+        z = z.flatten() - t[2]
+    else:
+        x, y, z = np.array([x, y, z]) - t
+    #invert the rotation
+    rotmat = RotationMatrix(a, b)
+    z, y, x = rotmat.T @ np.array([x, y, z])
+    truth = np.stack(((x**2 + y**2 <= r**2), (abs(z) <= h/2)))
+    return np.all(truth, axis=0)
+
+
 def dv_i(i, r, h, nr, nh, nt):
     """
     Calculate the volume element at the i-th slice
