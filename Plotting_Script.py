@@ -2,29 +2,24 @@ import numpy as np
 import plotly.graph_objects as go
 #import plotly.express as px
 #from plotly.subplots import make_subplots
-from astropy.io import fits
-
-import matplotlib.pyplot as plt
-
-import sys
-sys.path.append("/home/leone/Documents/Uni/Bachelor/Project/")
 
 import FuncDef as fd
 from importlib import reload
 import itertools
 
-from ipywidgets import VBox, HBox
+savefolder = "/savedplots/"
 
-savefolder = "/home/leone/Documents/Uni/Bachelor/Project/PlotCreatingScripts/savedplots/"
+FACTOR = 1653 #from unitless to n/cm-3
 
-FACTOR = 1653 #from unitless to mag to n/cm-3
+#load data from cloud-data.csv
+data = fd.load_data("cloud-data.csv", sep=";")
 
-data = fd.load_data("/home/leone/Documents/Uni/Bachelor/Project/cloud-data.csv", sep=";")
-
+#Example at Cloud 18
 cloud = fd.Cloud(*data.loc["18"])
 
 points = cloud.getPlottableDust(40, 40, 40)
 
+#Query E+ dustmap in surrounding area
 x, y, z = fd.cylinder(cloud.r, cloud.h, cloud.a, cloud.b, cloud.t, cloud.nr, cloud.nh, cloud.nt)
 
 x_ext = np.linspace(np.min(x)-100, np.max(x)+100, 40)
@@ -34,8 +29,7 @@ x_ext, y_ext, z_ext = np.meshgrid(x_ext, y_ext, z_ext)
 val = fd.query_region(x_ext.flatten(), y_ext.flatten(), z_ext.flatten())
 val[np.where(fd.check_inside_arr(x_ext.flatten(), y_ext.flatten(), z_ext.flatten(), cloud.r, cloud.h, cloud.a, cloud.b, cloud.t))]=0
 
-# select cloud 
-
+#create volume of cloud with inner structure visible
 volume = go.Volume(
     x = cloud.points[:,0],
     y = cloud.points[:,1],
@@ -56,6 +50,7 @@ volume = go.Volume(
     )
 )
 
+#create volume element of surrounding dust
 volume_surr = go.Volume(
     x = x_ext.flatten(),
     y = y_ext.flatten(),
@@ -76,6 +71,7 @@ volume_surr = go.Volume(
     )
 )
 
+#a few constants useful for the layout, including calculating a camera position at a desired zoom level
 xrange = [np.min(x_ext), np.max(x_ext)]
 yrange = [np.min(y_ext), np.max(y_ext)]
 zrange = [np.min(z_ext), np.max(z_ext)]
@@ -87,7 +83,7 @@ norm = np.sqrt(3)*1.25
 cam_weights = [1, 1/8, 0]
 cam_pos = np.sqrt(3/(np.sum(np.array(cam_weights)**2)))*np.array(cam_weights)
 
-
+#define layout
 layout = go.Layout(
     template="plotly_white",
     paper_bgcolor="white",
@@ -106,12 +102,13 @@ layout = go.Layout(
     height=1000,
 )
 
+#create first figure
 fig = go.Figure(data=[volume_surr, volume],layout=layout)
 f1 = go.FigureWidget(fig)
 fig.write_html(savefolder + "Cloud_selected.html")
 print("done Cloud_selected")
 
-# density cutoff 
+#visualize cloud boundary 
 volume2 = go.Volume(
     x = cloud.points[:,0],
     y = cloud.points[:,1],
@@ -133,7 +130,7 @@ f2 = go.FigureWidget(fig)
 fig.write_html(savefolder + "Dust_cutoff.html")
 print("done Dust_cutoff")
 
-# zoom in, cylinder around cloud
+# zoom in, query region again
 x_ext = np.linspace(np.min(x)-15, np.max(x)+15, 40)
 y_ext = np.linspace(np.min(y)-15, np.max(y)+15, 40)
 z_ext = np.linspace(np.min(z)-15, np.max(z)+15, 40)
@@ -141,6 +138,7 @@ x_ext, y_ext, z_ext = np.meshgrid(x_ext, y_ext, z_ext)
 val = fd.query_region(x_ext.flatten(), y_ext.flatten(), z_ext.flatten())
 val[np.where(fd.check_inside_arr(x_ext.flatten(), y_ext.flatten(), z_ext.flatten(), cloud.r, cloud.h, cloud.a, cloud.b, cloud.t))]=0
 
+#ranges and scale has changed
 xrange = [np.min(x_ext), np.max(x_ext)]
 yrange = [np.min(y_ext), np.max(y_ext)]
 zrange = [np.min(z_ext), np.max(z_ext)]
@@ -167,8 +165,8 @@ layout = go.Layout(
     height=1000,
 )
 
+#visualize surface of the cylinder
 xc, yc, zc = cloud.getCylinderPts()
-
 cyl = go.Surface(
     x = xc[:,-1,:],
     y = yc[:,-1,:],
@@ -179,6 +177,7 @@ cyl = go.Surface(
     name="cyl"
 )
 
+#new surrounding dust
 volume_surr = go.Volume(
     x = x_ext.flatten(),
     y = y_ext.flatten(),
@@ -204,6 +203,8 @@ f3 = go.FigureWidget(fig)
 fig.write_html(savefolder + "Cloud_selected_cylinder.html")
 print("done Cloud_selected_cylinder")
 
+
+#parameter variation (See FuncDef)
 params = np.array(list(itertools.product(
             (0.9, 1, 1.1),          # ir (radius variation)
             (0.9, 1, 1.1),          # iv_f_max (cutoff variation)
@@ -216,6 +217,7 @@ params = np.array(list(itertools.product(
 
 cyl_params = params[np.random.randint(0, len(params), 4)]
 
+#4 random cylinder surfaces
 cyls = []
 for i in range(4):
     var = cyl_params[i]
@@ -241,7 +243,4 @@ volume_surr["opacity"] = 0.1
 fig = go.Figure(data=[volume_surr, volume2, cyl, *cyls],layout=layout)
 f4 = go.FigureWidget(fig)
 fig.write_html(savefolder + "Cloud_error_cylinders.html")
-
-#f = VBox([HBox([f1, f2]), HBox([f3, f4])])
-#f.write_html(savefolder + "Cloud_all.html")
 print("done all")
