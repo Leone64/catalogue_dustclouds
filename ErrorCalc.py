@@ -17,10 +17,10 @@ import FuncDef_Simon as fd
 from tqdm import tqdm
 
 #Download dustmaps data and where to store it
-config["data_dir"] = "/home/leone/Documents/Uni/Bachelor/DustmapsData"
+#config["data_dir"] = "/A/place/where/to/store/dustmaps"
 # dustmaps.edenhofer2023.fetch()
 
-working_folder = "/home/leone/Documents/Uni/Bachelor/TestScripts/Checkpoint/"
+working_folder = "/working/folder/where/datasets/are/stored/"
 
 #load cloud data
 data = fd.load_data(working_folder + "cloud-data.csv", sep=";")
@@ -31,9 +31,7 @@ result = pd.DataFrame(columns=["i", "mean", "std", "staterr"])
 start_time_total = time.time()
 total_clouds = len(data.index)
 
-for idx, i in enumerate(tqdm(data.index), start=4):
-    if i == 5:
-        break
+for idx, i in enumerate(tqdm(data.index), start=1):
     cloud_start = time.time()
 
     #this is the long one
